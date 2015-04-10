@@ -1,0 +1,16 @@
+@hoge
+(LOOP)
+D=D;JMP
+A=A+1
+//ほげげ
+0;JEQ
+D
+@huga
+A+1
+//
+D|M;JGT
+@END
+=D;JLT
+(END)
+0;JMP
+@4555
