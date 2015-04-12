@@ -1,0 +1,22 @@
+// d=(2-x) * (y+5)
+push this 2
+//コメント
+
+   
+   push constant 0
+push  constant 1
+sub   //算術
+push  local 16
+pop local 0
+push   constant     14
+  add
+
+mult
+pop  that d
+
+push constant 14
+push constant 14
+eq
+push constant 255
+push constant 15
+and
