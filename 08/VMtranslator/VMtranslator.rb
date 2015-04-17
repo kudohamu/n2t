@@ -15,9 +15,14 @@ def translate
     parser.advance
     case parser.command_type
     when Command::C_RETURN
+      puts "return"
+      code_writer.write_return
     when Command::C_PUSH, Command::C_POP
       code_writer.interpret_push_pop(parser.command_type, parser.arg1, parser.arg2)
-    when Command::C_FUNCTION, Command::C_CALL
+    when Command::C_FUNCTION
+      puts "function"
+      code_writer.write_function(parser.arg1, parser.arg2)
+    when Command::C_CALL
     when Command::C_IF
       code_writer.write_if(parser.arg1)
     when Command::C_GOTO

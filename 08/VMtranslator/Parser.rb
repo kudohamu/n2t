@@ -29,12 +29,16 @@ class Parser
       @command_type = Command::C_PUSH
     when /\A\s*pop[\s\w]+\Z/
       @command_type = Command::C_POP
-    when /\A\s*if-goto[\s\w]+\Z/
+    when /\A\s*if-goto[\s\w\.:]+\Z/
       @command_type = Command::C_IF
-    when /\A\s*goto[\s\w]+\Z/
+    when /\A\s*goto[\s\w\.:]+\Z/
       @command_type = Command::C_GOTO
-    when /\A\s*label[\s\w]+\Z/
+    when /\A\s*label[\s\w\.:]+\Z/
       @command_type = Command::C_LABEL
+    when /\A\s*function.*\Z/
+      @command_type = Command::C_FUNCTION
+    when /\A\s*return\Z/
+      @command_type = Command::C_RETURN
     else
       @command_type = Command::C_ARITHMETIC
     end
@@ -46,7 +50,7 @@ class Parser
 
   def arg1
     case @command_type
-    when Command::C_IF, Command::C_GOTO, Command::C_LABEL
+    when Command::C_IF, Command::C_GOTO, Command::C_LABEL, Command::C_FUNCTION
       @commands[@index].split("\s")[1]
     when Command::C_ARITHMETIC
       @commands[@index].gsub(/\s*/, "")

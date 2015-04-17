@@ -101,6 +101,7 @@ class CodeWriter
           'M=M+1'
         ])
       else
+        raise "PUSHSegmentError"
       end
     when Command::C_POP
       case segment
@@ -153,8 +154,11 @@ class CodeWriter
           "@#{File.basename(@file_name, ".*")}.#{index}",
           'M=D'
         ])
+      else
+        raise "POPSegmentError"
       end
     else
+      raise "CommandError"
     end
   end
 
@@ -185,11 +189,87 @@ class CodeWriter
   end
 
   def write_return
+    add_codes([
+      "@#{@lcl}",
+      'D=M',
+      '@13', #frame
+      "M=D"
+    ])
 
+    add_codes([
+      '@5',
+      'D=A',
+      '@13',
+      'A=M-D', #*(frame-5)
+      'D=M', 
+      '@14', #ret
+      'M=D' #ret=*(frame-5)
+    ])
+
+    interpret_push_pop(Command::C_POP, 'argument', 0)
+
+    add_codes([
+      "@#{@arg}",
+      'D=M',
+      "@#{@sp}",
+      'M=D+1', #sp=arg+1
+    ])
+
+    add_codes([
+      '@1',
+      'D=A',
+      '@13', #frame
+      'A=M-D', #*(frame-1)
+      'D=M',
+      "@#{@that}",
+      'M=D' #that=*(frame-1)
+    ])
+
+    add_codes([
+      '@2',
+      'D=A',
+      '@13', #frame
+      'A=M-D', #*(frame-2)
+      'D=M',
+      "@#{@this}",
+      'M=D' #this=*(frame-2)
+    ])
+
+    add_codes([
+      '@3',
+      'D=A',
+      '@13', #frame
+      'A=M-D', #*(frame-3)
+      'D=M',
+      "@#{@arg}",
+      'M=D' #arg=*(frame-3)
+    ])
+
+    add_codes([
+      '@4',
+      'D=A',
+      '@13', #frame
+      'A=M-D', #*(frame-4)
+      'D=M',
+      "@#{@lcl}",
+      'M=D' #lcl=*(frame-4)
+    ])
+
+    add_codes([
+      '@14', #ret
+      'A=M',
+      '0;JMP'
+    ])
   end
 
   def write_function(function_name, num_locals)
-
+    codes = [
+      "(#{function_name})"
+    ]
+    add_codes(codes)
+    num_locals.times do
+      interpret_push_pop(Command::C_PUSH, 'constant', 0)
+    end
   end
 
   def close

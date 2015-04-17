@@ -24,3 +24,9 @@ label L2
 if-goto L1
 goto L2
 label L1
+function hoge 2
+push constant 1
+push constant 2
+push local 0
+add 
+return
