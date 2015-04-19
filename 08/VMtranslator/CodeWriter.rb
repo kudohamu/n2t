@@ -10,6 +10,10 @@ class CodeWriter
     @that = 4
     @temp = 5
 
+    @return = 0
+    @current_function = ""
+    @jump_point = 0
+
     @op_map = {
       'add' => '+',
       'sub' => '-',
@@ -21,7 +25,14 @@ class CodeWriter
   end
 
   def write_init
+    add_codes([
+      '@256',
+      'D=A',
+      "@#{@sp}",
+      'M=D'
+    ])
 
+    write_call('Sys.init', 0)
   end
 
   def interpret_arithmetic(command)
@@ -41,7 +52,7 @@ class CodeWriter
     when Command::C_PUSH
       case segment
       when 'constant'
-        if (0 <= index && index <= 32767)
+        #if (0 <= index && index <= 32767)
           add_codes([
             "@#{index}",
             'D=A',
@@ -51,9 +62,9 @@ class CodeWriter
             "@#{@sp}",
             'M=M+1'
           ])
-        else
-          raise 'InvalidConstantNumber'
-        end
+        #else
+          #raise 'InvalidConstantNumber'
+        #end
       when 'local', 'argument', 'this', 'that', 'temp'
         if (segment == 'temp')
           if (index < 0 || 7 < index)
@@ -163,12 +174,12 @@ class CodeWriter
   end
 
   def write_label(label)
-    add_codes(["(#{label})"])
+    add_codes(["(#{create_label(label)})"])
   end
 
   def write_goto(label)
     add_codes([
-      "@#{label}",
+      "@#{create_label(label)}",
       '0;JMP'
     ])
   end
@@ -179,13 +190,77 @@ class CodeWriter
       'M=M-1',
       'A=M',
       'D=M',
-      "@#{label}",
+      "@#{create_label(label)}",
       'D;JNE'
     ])
   end
 
   def write_call(function_name, num_args)
+    return_address = "return-address.#{@return}"
+    @return += 1
 
+    interpret_push_pop(Command::C_PUSH, 'constant', return_address)
+
+    add_codes([
+      "@#{@lcl}",
+      'D=M',
+      "@#{@sp}",
+      'A=M',
+      'M=D',
+      "@#{@sp}",
+      'M=M+1'
+    ])
+
+    add_codes([
+      "@#{@arg}",
+      'D=M',
+      "@#{@sp}",
+      'A=M',
+      'M=D',
+      "@#{@sp}",
+      'M=M+1'
+    ])
+
+    add_codes([
+      "@#{@this}",
+      'D=M',
+      "@#{@sp}",
+      'A=M',
+      'M=D',
+      "@#{@sp}",
+      'M=M+1'
+    ])
+
+    add_codes([
+      "@#{@that}",
+      'D=M',
+      "@#{@sp}",
+      'A=M',
+      'M=D',
+      "@#{@sp}",
+      'M=M+1'
+    ])
+
+    add_codes([
+      "@#{@sp}",
+      'D=M',
+      "@#{num_args}",
+      'D=D-A',
+      '@5',
+      'D=D-A',
+      "@#{@arg}",
+      'M=D'
+    ])
+
+    add_codes([
+      "@#{@sp}",
+      'D=M',
+      "@#{@lcl}",
+      'M=D'
+    ])
+
+    write_goto(function_name)
+    add_codes(["(#{return_address})"])
   end
 
   def write_return
@@ -323,14 +398,16 @@ class CodeWriter
       'A=M', #x
       'D=M-D',
       'M=-1', #x=true
-      "@#{@codes.length + 5 + 9}", #set jump_point
+      "@jump_point.#{@jump_point}", #set jump_point
       "D;J#{op.upcase}",
       "@#{@sp}",
       'A=M', #x
       'M=0', #x=false
+      "(jump_point.#{@jump_point})",
       "@#{@sp}", #jump_point
       'M=M+1', #sp=sp+1
     ])
+    @jump_point += 1
   end
 
   def get_segment_base_index(segment)
@@ -351,6 +428,15 @@ class CodeWriter
   def add_codes(codes)
     codes.each do |code|
       @codes.push(code)
+    end
+  end
+
+  private
+  def create_label(label)
+    if @current_function == ""
+      label
+    else
+      "#{@current_function}$#{label}"
     end
   end
 end

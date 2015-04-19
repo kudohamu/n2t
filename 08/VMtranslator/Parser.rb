@@ -39,6 +39,8 @@ class Parser
       @command_type = Command::C_FUNCTION
     when /\A\s*return\Z/
       @command_type = Command::C_RETURN
+    when /\A\s*call.*\Z/
+      @command_type = Command::C_CALL
     else
       @command_type = Command::C_ARITHMETIC
     end
@@ -50,7 +52,7 @@ class Parser
 
   def arg1
     case @command_type
-    when Command::C_IF, Command::C_GOTO, Command::C_LABEL, Command::C_FUNCTION
+    when Command::C_IF, Command::C_GOTO, Command::C_LABEL, Command::C_FUNCTION, Command::C_CALL
       @commands[@index].split("\s")[1]
     when Command::C_ARITHMETIC
       @commands[@index].gsub(/\s*/, "")
